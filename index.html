@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Блокнот машиниста — прототип</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0b5fff">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Блокнот машиниста</h1>
+    <button id="btn-settings" title="Настройки">⚙️</button>
+  </header>
+
+  <main class="container">
+    <section class="add-section card">
+      <h2>Добавить поездку</h2>
+      <form id="trip-form">
+        <div class="row">
+          <label>Дата <input type="date" id="date" required></label>
+          <label>Маршрут <input id="route" placeholder="Напр. Москва — Питер"></label>
+        </div>
+        <div class="row">
+          <label>Время начала <input type="time" id="start"></label>
+          <label>Время окончания <input type="end" type="time" id="end"></label>
+        </div>
+        <div class="row">
+          <label>Часы (если не указываешь время) <input type="number" step="0.25" min="0" id="hours"></label>
+          <label>Примечание <input id="note" placeholder="опционально"></label>
+        </div>
+        <div class="row">
+          <label>Тип смены
+            <select id="shiftType">
+              <option value="normal">Обычная</option>
+              <option value="night">Ночная</option>
+              <option value="overtime">Сверхурочная</option>
+            </select>
+          </label>
+          <label>Бонус / доп. руб <input type="number" id="bonus" value="0" step="1"></label>
+        </div>
+        <div class="actions">
+          <button type="submit" class="btn primary">Добавить</button>
+          <button type="button" id="clear-form" class="btn">Очистить</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="list-section card">
+      <h2>Поездки</h2>
+      <div id="summary" class="summary">
+        <div>Всего часов: <span id="total-hours">0</span></div>
+        <div>Примерная зарплата: <strong id="total-pay">0 ₽</strong></div>
+      </div>
+      <ul id="trip-list" class="trip-list"></ul>
+      <div class="list-actions">
+        <button id="export-csv" class="btn">Экспорт CSV</button>
+        <button id="export-json" class="btn">Резервная копия (JSON)</button>
+        <button id="import-json" class="btn">Импорт JSON</button>
+        <input type="file" id="json-file" accept="application/json" style="display:none">
+        <button id="reset-all" class="btn danger">Удалить всё</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Settings modal -->
+  <dialog id="settings-modal" class="modal">
+    <form method="dialog" id="settings-form">
+      <h3>Настройки расчёта</h3>
+      <label>Базовая ставка (руб/час) <input type="number" id="baseRate" step="0.01" value="500"></label>
+      <label>Ночная надбавка (множитель) <input type="number" id="nightMultiplier" step="0.01" value="1.5"></label>
+      <label>Порог сверхурочных (часов в смене) <input type="number" id="overtimeThreshold" step="0.1" value="8"></label>
+      <label>Множитель сверхурочных <input type="number" id="overtimeMultiplier" step="0.01" value="2"></label>
+      <p class="muted">Значения можно изменять — я не знаю точные правила GSD, поэтому оставил настраиваемые параметры.</p>
+      <menu>
+        <button id="save-settings" class="btn primary">Сохранить</button>
+        <button id="close-settings" class="btn">Закрыть</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <template id="trip-item-tpl">
+    <li class="trip-item card">
+      <div class="trip-main">
+        <div class="trip-meta">
+          <div class="date-route"><span class="date"></span> — <span class="route"></span></div>
+          <div class="hours">Часы: <span class="hours-val"></span></div>
+        </div>
+        <div class="trip-pay">₽ <span class="pay-val"></span></div>
+      </div>
+      <div class="trip-note muted"></div>
+      <div class="trip-actions">
+        <button class="edit btn">Изменить</button>
+        <button class="del btn danger">Удалить</button>
+      </div>
+    </li>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
