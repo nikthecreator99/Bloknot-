@@ -9,16 +9,25 @@ const toMoney = v => (Number(v||0)).toFixed(2);
 // ===== Default Data =====
 const defaultTariffs = { base: 358.46, region: 20, north: 50, klass: 0, zone: 0, bam: 0, comm: 0, monthNorm: 176 };
 if(!S('tariffs')) S('tariffs', defaultTariffs);
-if(!S('sections')) S('sections', [
+if(!S('sections')) S('sections', []/*
   {id:1, name:'Малошуйка — Обозерская', from:'Малошуйка', to:'Обозерская', len:167, normWeight:5200, normLen:59, stations:['Малошуйка','Обозерская']},
   {id:2, name:'Обозерская — Малошуйка', from:'Обозерская', to:'Малошуйка', len:167, normWeight:5200, normLen:59, stations:['Обозерская','Малошуйка']}
-]);
-if(!S('trips')) S('trips', []);
+]);*/
+if(!S('trips')) S('trips', []);*/
 if(!S('refsText')) S('refsText','');
 if(!S('goState')) S('goState', null);
 if(!S('normBasis')) S('normBasis','calendar');
 
 // ===== UI: Drawer & Views =====
+function toast(text='Сохранено'){
+  const t = document.getElementById('toast'); if(!t) return;
+  t.textContent = text; t.hidden=false; t.classList.remove('show');
+  // force reflow
+  void t.offsetWidth; 
+  t.classList.add('show');
+  setTimeout(()=>{ t.hidden=true; t.classList.remove('show'); }, 2400);
+}
+
 const drawer = el('drawer'), scrim = el('scrim');
 el('menuBtn').addEventListener('click', ()=>{ drawer.setAttribute('aria-hidden','false'); scrim.hidden=false; });
 scrim.addEventListener('click', ()=>{ drawer.setAttribute('aria-hidden','true'); scrim.hidden=true; });
@@ -88,7 +97,7 @@ el('clearFiltersBtn').addEventListener('click', ()=>{
 });
 ['searchQuery','filterMonth','filterMode'].forEach(id=> el(id).addEventListener('input', renderDashboard));
 function populateMonthsSelect(){
-  const trips = S('trips',[]);
+  const trips = S('trips',[]);*/
   const months = Array.from(new Set(trips.map(t=> t.date?.slice(0,7)).filter(Boolean))).sort().reverse();
   const sel = el('filterMonth'); const cur = sel.value;
   sel.innerHTML = '<option value=\"\">Текущий месяц</option>' + months.map(m=> `<option>${m}</option>`).join('');
@@ -101,7 +110,7 @@ function workingDaysElapsed(year, month, today){ let c=0; for(let d=1; d<=today;
 
 function renderMonthWidget(monthKey){
   const t = S('tariffs', defaultTariffs);
-  const tripsAll = S('trips',[]);
+  const tripsAll = S('trips',[]);*/
   const trips = tripsAll.filter(tr=> tr.date && tr.date.slice(0,7) === monthKey);
   const workedMin = trips.reduce((acc,x)=> acc + (x.workedMin||0), 0);
   const normMin = (t.monthNorm||0) * 60;
@@ -150,7 +159,7 @@ function openTripModal(trip=null){
   editingTripId = trip? trip.id : null;
   el('tripModalTitle').textContent = editingTripId? 'Редактирование поездки' : 'Новая поездка';
   el('tripDeleteBtn').style.display = editingTripId? 'inline-flex' : 'none';
-  const secs = S('sections',[]);
+  const secs = S('sections',[]);*/
   const sel = el('tripSection'); sel.innerHTML=''; secs.forEach(s=>{ const o=document.createElement('option'); o.value=s.id; o.textContent=s.name; sel.appendChild(o); });
   el('tripDate').value = trip?.date || new Date().toISOString().slice(0,10);
   el('tripSection').value = trip?.sectionId || (secs[0]?.id || '');
@@ -284,7 +293,7 @@ el('tripSaveBtn').addEventListener('click', ()=>{
     notes: el('tripNotes').value.trim(),
     money: moneyForTrip(worked)
   };
-  const trips = S('trips',[]);
+  const trips = S('trips',[]);*/
   const idx = trips.findIndex(x=>x.id===trip.id);
   if(idx>=0) trips[idx]=trip; else trips.unshift(trip);
   S('trips', trips);
@@ -300,6 +309,15 @@ el('tripDeleteBtn').addEventListener('click', ()=>{
 
 // ===== Sections (with stations list) =====
 const sectionModal = el('sectionModal'); let editingSectionId = null;
+// Close on outside click
+sectionModal.addEventListener('click', (e)=>{
+  if(e.target === sectionModal){ closeSectionModal(); }
+});
+// Close on ESC
+document.addEventListener('keydown', (e)=>{
+  if(!sectionModal.hidden && e.key === 'Escape'){ closeSectionModal(); }
+});
+
 el('addSectionBtn')?.addEventListener('click', ()=> openSectionModal());
 function openSectionModal(sec=null){
   editingSectionId = sec? sec.id : null;
@@ -314,7 +332,10 @@ function openSectionModal(sec=null){
   el('secStations').value = (sec?.stations||[]).join(', ');
   sectionModal.hidden=false;
 }
-function closeSectionModal(){ sectionModal.hidden=true; }
+function closeSectionModal(){ 
+  sectionModal.hidden=true; 
+  editingSectionId = null;
+}
 el('sectionCloseBtn').addEventListener('click', closeSectionModal);
 el('sectionSaveBtn').addEventListener('click', ()=>{
   const s = {
@@ -329,7 +350,7 @@ el('sectionSaveBtn').addEventListener('click', ()=>{
   };
   const arr = S('sections',[]); const idx=arr.findIndex(x=>x.id===s.id);
   if(idx>=0) arr[idx]=s; else arr.push(s);
-  S('sections', arr); renderSections(); closeSectionModal();
+  S('sections', arr); renderSections(); toast('Участок сохранён'); closeSectionModal(); renderDashboard();
 });
 el('sectionDeleteBtn').addEventListener('click', ()=>{
   if(!editingSectionId) return;
@@ -339,7 +360,7 @@ el('sectionDeleteBtn').addEventListener('click', ()=>{
 
 function renderSections(){
   const wrap = el('sectionList'); wrap.innerHTML='';
-  const sections = S('sections',[]);
+  const sections = S('sections',[]);*/
   if(!sections.length){ wrap.innerHTML='<div class="muted small">Нет участков.</div>'; return; }
   sections.forEach(s=>{
     const d=document.createElement('div'); d.className='card';
@@ -543,7 +564,13 @@ function renderDashboard(){
 
 // ===== Init =====
 function init(){
-  document.getElementById('themeSelect').value = S('theme','dark'); applyTheme(S('theme','dark'));
-  renderTariffs(); renderSections(); renderDashboard(); renderRefs();
+  document.getElementById('themeSelect').value = S('theme','dark'); 
+  applyTheme(S('theme','dark'));
+  renderTariffs(); 
+  renderSections(); 
+  renderDashboard(); 
+  renderRefs();
+  // do not auto-open any modals
 }
 init();
+
