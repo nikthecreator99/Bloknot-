@@ -309,6 +309,7 @@ el('tripDeleteBtn').addEventListener('click', ()=>{
 
 // ===== Sections (with stations list) =====
 const sectionModal = el('sectionModal'); let editingSectionId = null;
+let allowOpenSectionModal = false;
 // Close on outside click
 sectionModal.addEventListener('click', (e)=>{
   if(e.target === sectionModal){ closeSectionModal(); }
@@ -318,8 +319,10 @@ document.addEventListener('keydown', (e)=>{
   if(!sectionModal.hidden && e.key === 'Escape'){ closeSectionModal(); }
 });
 
-el('addSectionBtn')?.addEventListener('click', ()=> openSectionModal());
+el('addSectionBtn')?.addEventListener('click', ()=> { allowOpenSectionModal = true; openSectionModal(); allowOpenSectionModal = false; });
 function openSectionModal(sec=null){
+  if(!allowOpenSectionModal){ console.warn('Blocked auto-open of section modal'); return; }
+
   editingSectionId = sec? sec.id : null;
   el('sectionModalTitle').textContent = editingSectionId? 'Редактирование участка' : 'Новый участок';
   el('sectionDeleteBtn').style.display = editingSectionId? 'inline-flex' : 'none';
@@ -376,8 +379,8 @@ function renderSections(){
       <div style="margin-top:8px"><button class="btn" data-edit="${s.id}">Редактировать</button></div>`;
     wrap.appendChild(d);
   });
-  wrap.querySelectorAll('button[data-edit]').forEach(b=>b.addEventListener('click', ()=>{
-    const id=Number(b.getAttribute('data-edit')); openSectionModal(S('sections',[]).find(x=>x.id===id));
+  wrap.querySelectorAll('button[data-edit]').forEach(b=>b.addEventListener('click', ()=>{ allowOpenSectionModal = true;
+    const id=Number(b.getAttribute('data-edit')); openSectionModal(S('sections',[]).find(x=>x.id===id)); allowOpenSectionModal = false;
   }));
 }
 
@@ -566,12 +569,16 @@ function renderDashboard(){
 function init(){
   document.getElementById('themeSelect').value = S('theme','dark'); 
   applyTheme(S('theme','dark'));
+  // Force-hide any modal remnants
+  document.querySelectorAll('.modal').forEach(m=>{ m.hidden = true; });
   renderTariffs(); 
   renderSections(); 
   renderDashboard(); 
   renderRefs();
-  console.log('Init 2025.9 — no auto-open section modal');
+  console.log('Init 2025.10 — modals force-hidden, section modal guarded');
 }
 init();
+
+
 
 
