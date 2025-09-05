@@ -1,102 +1,284 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Блокнот машиниста — прототип</title>
-  <link rel="stylesheet" href="styles.css">
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0b5fff">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Блокнот Машиниста · 2025 PRO</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#d32f2f">
+<link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Блокнот 2025">
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header class="topbar">
-    <h1>Блокнот машиниста</h1>
-    <button id="btn-settings" title="Настройки">⚙️</button>
-  </header>
+<header class="appbar">
+  <button id="menuBtn" class="iconbtn" aria-label="menu">☰</button>
+  <div class="appbar-title">
+    <div class="muted">План на сегодня</div>
+    <div id="todayNorm" class="title">—</div>
+  </div>
+  <button id="goBtn" class="btn primary compact" title="Поехали!">▶︎ Поехали</button>
+</header>
 
-  <main class="container">
-    <section class="add-section card">
-      <h2>Добавить поездку</h2>
-      <form id="trip-form">
-        <div class="row">
-          <label>Дата <input type="date" id="date" required></label>
-          <label>Маршрут <input id="route" placeholder="Напр. Москва — Питер"></label>
-        </div>
-        <div class="row">
-          <label>Время начала <input type="time" id="start"></label>
-          <label>Время окончания <input type="end" type="time" id="end"></label>
-        </div>
-        <div class="row">
-          <label>Часы (если не указываешь время) <input type="number" step="0.25" min="0" id="hours"></label>
-          <label>Примечание <input id="note" placeholder="опционально"></label>
-        </div>
-        <div class="row">
-          <label>Тип смены
-            <select id="shiftType">
-              <option value="normal">Обычная</option>
-              <option value="night">Ночная</option>
-              <option value="overtime">Сверхурочная</option>
-            </select>
-          </label>
-          <label>Бонус / доп. руб <input type="number" id="bonus" value="0" step="1"></label>
-        </div>
-        <div class="actions">
-          <button type="submit" class="btn primary">Добавить</button>
-          <button type="button" id="clear-form" class="btn">Очистить</button>
-        </div>
-      </form>
-    </section>
+<nav id="drawer" class="drawer" aria-hidden="true">
+  <div class="drawer-head">
+    <div class="avatar">🚂</div>
+    <div>
+      <div class="drawer-title">Блокнот Машиниста</div>
+      <div class="muted small">PWA • оффлайн</div>
+    </div>
+  </div>
+  <button class="navitem active" data-view="dashboard">Поездки</button>
+  <button class="navitem" data-view="sections">Участки</button>
+  <button class="navitem" data-view="tariffs">Тарифы и надбавки</button>
+  <button class="navitem" data-view="calc">Калькуляторы</button>
+  <button class="navitem" data-view="db">База данных</button>
+  <button class="navitem" data-view="refs">Справка</button>
+  <button class="navitem" data-view="settings">Настройки</button>
+  <div class="drawer-foot muted small"><a href="#" id="waLink">Группа в WhatsApp</a> • Версия 2025.7</div>
+</nav>
+<div id="scrim" class="scrim" hidden></div>
 
-    <section class="list-section card">
-      <h2>Поездки</h2>
-      <div id="summary" class="summary">
-        <div>Всего часов: <span id="total-hours">0</span></div>
-        <div>Примерная зарплата: <strong id="total-pay">0 ₽</strong></div>
+<main class="container">
+  <!-- DASHBOARD -->
+  <section id="view-dashboard" class="view">
+    <!-- Monthly widget (expanded) -->
+    <div id="monthWidget" class="card month-widget" style="display:none">
+      <div class="mw-head">
+        <div class="mw-title">Месячная норма: <b id="mwNorm">—</b></div>
+        <label class="mw-basis">База нормы:
+          <select id="normBasis">
+            <option value="calendar">Календарные дни</option>
+            <option value="working">Рабочие дни (Пн–Пт)</option>
+          </select>
+        </label>
       </div>
-      <ul id="trip-list" class="trip-list"></ul>
-      <div class="list-actions">
-        <button id="export-csv" class="btn">Экспорт CSV</button>
-        <button id="export-json" class="btn">Резервная копия (JSON)</button>
-        <button id="import-json" class="btn">Импорт JSON</button>
-        <input type="file" id="json-file" accept="application/json" style="display:none">
-        <button id="reset-all" class="btn danger">Удалить всё</button>
-      </div>
-    </section>
-  </main>
-
-  <!-- Settings modal -->
-  <dialog id="settings-modal" class="modal">
-    <form method="dialog" id="settings-form">
-      <h3>Настройки расчёта</h3>
-      <label>Базовая ставка (руб/час) <input type="number" id="baseRate" step="0.01" value="500"></label>
-      <label>Ночная надбавка (множитель) <input type="number" id="nightMultiplier" step="0.01" value="1.5"></label>
-      <label>Порог сверхурочных (часов в смене) <input type="number" id="overtimeThreshold" step="0.1" value="8"></label>
-      <label>Множитель сверхурочных <input type="number" id="overtimeMultiplier" step="0.01" value="2"></label>
-      <p class="muted">Значения можно изменять — я не знаю точные правила GSD, поэтому оставил настраиваемые параметры.</p>
-      <menu>
-        <button id="save-settings" class="btn primary">Сохранить</button>
-        <button id="close-settings" class="btn">Закрыть</button>
-      </menu>
-    </form>
-  </dialog>
-
-  <template id="trip-item-tpl">
-    <li class="trip-item card">
-      <div class="trip-main">
-        <div class="trip-meta">
-          <div class="date-route"><span class="date"></span> — <span class="route"></span></div>
-          <div class="hours">Часы: <span class="hours-val"></span></div>
+      <div class="mw-block">
+        <div class="mw-label">Прогресс месяца</div>
+        <div class="progress"><div id="mwBar"></div></div>
+        <div class="progress-nums">
+          <div>Отработано: <b id="mwWorked">—</b></div>
+          <div>Выполнено: <b id="mwPercent">—</b></div>
         </div>
-        <div class="trip-pay">₽ <span class="pay-val"></span></div>
+        <div class="mw-remaining" id="mwRemaining">—</div>
       </div>
-      <div class="trip-note muted"></div>
-      <div class="trip-actions">
-        <button class="edit btn">Изменить</button>
-        <button class="del btn danger">Удалить</button>
+      <div class="mw-block">
+        <div class="mw-label">План на сегодня</div>
+        <div class="progress alt"><div id="planBar"></div></div>
+        <div class="progress-nums">
+          <div>План до сегодня: <b id="planHours">—</b></div>
+          <div>Выполнено от плана: <b id="planPercent">—</b></div>
+        </div>
       </div>
-    </li>
-  </template>
+    </div>
 
-  <script src="app.js"></script>
+    <div id="quickGo" class="card subtle" hidden>
+      <div class="toolbar">
+        <div><b>Смена запущена</b> • старт: <span id="goStart"></span></div>
+        <div>
+          <button id="goAddStop" class="btn">Стоянка</button>
+          <button id="goFinish" class="btn primary">Завершить</button>
+        </div>
+      </div>
+      <div class="muted small">По завершении откроется форма поездки со временем явки/окончания и наброском маршрута.</div>
+    </div>
+
+    <div id="filters" class="filters card">
+      <input id="searchQuery" type="text" placeholder="Поиск: участок, станция, № поезда, локомотив">
+      <select id="filterMonth"><option value="">Текущий месяц</option></select>
+      <select id="filterMode"><option value="">Все режимы</option><option value="electro">Электро</option><option value="diesel">Дизель</option></select>
+      <button id="clearFiltersBtn" class="btn ghost">Сброс</button>
+    </div>
+
+    <div class="segmented">
+      <button class="seg active" data-seg="days">По дням</button>
+      <button class="seg" data-seg="months">По месяцам</button>
+      <button class="seg" data-seg="payroll">Расчёт справки</button>
+    </div>
+
+    <div id="daysView" class="stack"></div>
+    <div id="monthsView" class="stack" hidden></div>
+    <div id="payrollView" class="stack" hidden></div>
+
+    <button id="fabAddTrip" class="fab" title="Добавить поездку">+</button>
+  </section>
+
+  <!-- SECTIONS -->
+  <section id="view-sections" class="view" hidden>
+    <div class="toolbar">
+      <h2>Участки</h2>
+      <button id="addSectionBtn" class="btn">Новый участок</button>
+    </div>
+    <div id="sectionList" class="stack"></div>
+  </section>
+
+  <!-- TARIFFS -->
+  <section id="view-tariffs" class="view" hidden>
+    <h2>Тарифная ставка и надбавки</h2>
+    <div class="card form">
+      <div class="row"><label>Тарифная ставка (руб/час)</label><input id="tar_base" type="number" inputmode="decimal" placeholder="358.46"></div>
+      <div class="grid2">
+        <div class="row"><label>Районный</label><input id="tar_region" type="number" inputmode="decimal" placeholder="20"><span class="suffix">%</span></div>
+        <div class="row"><label>Северный</label><input id="tar_north" type="number" inputmode="decimal" placeholder="50"><span class="suffix">%</span></div>
+        <div class="row"><label>Класс</label><input id="tar_class" type="number" inputmode="decimal" placeholder="0"><span class="suffix">%</span></div>
+        <div class="row"><label>Зональная</label><input id="tar_zone" type="number" inputmode="decimal" placeholder="0"><span class="suffix">%</span></div>
+        <div class="row"><label>БАМ</label><input id="tar_bam" type="number" inputmode="decimal" placeholder="0"><span class="suffix">%</span></div>
+        <div class="row"><label>Ком. расходы (за поездку)</label><input id="tar_comm" type="number" inputmode="decimal" placeholder="0"><span class="suffix">₽</span></div>
+      </div>
+      <div class="row"><label>Месячная норма (ч)</label><input id="tar_month_norm" type="number" inputmode="decimal" placeholder="176"></div>
+      <div class="row">
+        <button id="saveTariffsBtn" class="btn primary">Сохранить</button>
+        <button id="resetTariffsBtn" class="btn ghost">Сброс</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- CALCULATORS -->
+  <section id="view-calc" class="view" hidden>
+    <h2>Калькуляторы</h2>
+    <div class="grid2">
+      <div class="card form">
+        <h3>Электроэнергия</h3>
+        <div class="row"><label>кВт·ч</label><input id="kwh" type="number" inputmode="decimal" placeholder="0"></div>
+        <div class="row"><label>Цена за кВт·ч (₽)</label><input id="kwh_price" type="number" inputmode="decimal" placeholder="0"></div>
+        <div class="row"><button id="calcEnergyBtn" class="btn">Рассчитать</button></div>
+        <div class="muted">Стоимость: <b id="energyCost">—</b></div>
+      </div>
+      <div class="card form">
+        <h3>Топливо</h3>
+        <div class="row"><label>Литры</label><input id="fuel_l" type="number" inputmode="decimal" placeholder="0"></div>
+        <div class="row"><label>Цена за литр (₽)</label><input id="fuel_price" type="number" inputmode="decimal" placeholder="0"></div>
+        <div class="row"><button id="calcFuelBtn" class="btn">Рассчитать</button></div>
+        <div class="muted">Стоимость: <b id="fuelCost">—</b></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DB TOOLS -->
+  <section id="view-db" class="view" hidden>
+    <h2>База данных</h2>
+    <div class="card form">
+      <div class="row"><button id="backupBtn" class="btn">Скачать резервную копию</button></div>
+      <div class="row"><input id="restoreFile" type="file" accept="application/json"></div>
+      <div class="row"><button id="clearDbBtn" class="btn danger">Полная очистка</button></div>
+    </div>
+  </section>
+
+  <!-- REFS -->
+  <section id="view-refs" class="view" hidden>
+    <h2>Справка / Шпаргалки</h2>
+    <div class="card form">
+      <textarea id="refText" placeholder="Добавьте свои шпаргалки…"></textarea>
+      <div class="row"><button id="saveRefsBtn" class="btn">Сохранить</button><button id="clearRefsBtn" class="btn ghost">Очистить</button></div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="view-settings" class="view" hidden>
+    <h2>Настройки</h2>
+    <div class="card form">
+      <div class="row"><label>Тема</label><select id="themeSelect"><option value="dark">Тёмная</option><option value="light">Светлая</option></select></div>
+      <div class="row"><button id="exportBtn" class="btn">Экспорт</button><input id="importFile" type="file" accept="application/json"></div>
+    </div>
+  </section>
+</main>
+
+<!-- Trip Editor Modal -->
+<div id="tripModal" class="modal" hidden>
+  <div class="modal-card animate-pop">
+    <div class="modal-head">
+      <div id="tripModalTitle">Новая поездка</div>
+      <div class="modal-actions">
+        <button id="tripDeleteBtn" class="iconbtn danger">🗑</button>
+        <button id="tripCloseBtn" class="iconbtn">✕</button>
+      </div>
+    </div>
+    <div class="modal-body form">
+      <div class="grid2">
+        <div class="row"><label>Дата</label><input id="tripDate" type="date"></div>
+        <div class="row"><label>Маршрут (участок)</label><select id="tripSection"></select></div>
+      </div>
+      <div class="grid2">
+        <div class="row"><label>Станция отправления</label><input id="tripFrom" type="text"></div>
+        <div class="row"><label>Станция прибытия</label><input id="tripTo" type="text"></div>
+      </div>
+      <div class="grid3">
+        <div class="row"><label>Длина участка (км)</label><input id="tripLen" type="number" inputmode="decimal"></div>
+        <div class="row"><label>Тип поезда</label><select id="tripType"><option>Грузовой</option><option>Пассажирский</option><option>Маневровый</option></select></div>
+        <div class="row"><label>Режим</label><select id="tripMode"><option value="electro">Электро</option><option value="diesel">Дизель</option></select></div>
+      </div>
+      <div class="grid2">
+        <div class="row"><label>№ поезда</label><input id="tripNumber" type="text"></div>
+        <div class="row"><label>№ локомотива</label><input id="tripLoco" type="text"></div>
+      </div>
+      <div class="grid3">
+        <div class="row"><label>Вес поезда (т)</label><input id="tripWeight" type="number" inputmode="decimal"></div>
+        <div class="row"><label>Оси</label><input id="tripAxles" type="number" inputmode="numeric"></div>
+        <div class="row"><label>Усл. длина</label><input id="tripCondLen" type="number" inputmode="decimal"></div>
+      </div>
+
+      <div class="grid2">
+        <div class="row"><label>Явка</label><input id="tripStart" type="time"></div>
+        <div class="row"><label>Окончание</label><input id="tripEnd" type="time"></div>
+      </div>
+
+      <div class="row"><label class="checkbox"><input id="excludeStops" type="checkbox"> Исключать стоянки</label></div>
+
+      <div class="card subtle">
+        <div class="toolbar" style="margin:0 0 6px 0"><h3 style="margin:0;font-size:15px">Время стоянок</h3><button id="addStopBtn" class="btn">Добавить</button></div>
+        <div id="stopList" class="stack small"></div>
+        <div class="muted small">Итог по стоянкам: <b id="stopsTotal">0 мин</b></div>
+      </div>
+
+      <div class="grid2 mode-fields">
+        <div class="row mode-electro"><label>Электроэнергия (кВт·ч)</label><input id="tripEnergy" type="number" inputmode="decimal" value="0"></div>
+        <div class="row mode-diesel" hidden><label>Топливо (л)</label><input id="tripFuel" type="number" inputmode="decimal" value="0"></div>
+      </div>
+
+      <div class="card subtle">
+        <div class="section-title">Проверка норм участка</div>
+        <div id="normsBox" class="kv"></div>
+      </div>
+
+      <div class="row"><label>Заметки</label><textarea id="tripNotes"></textarea></div>
+      <div class="summary card"><div>Отработано: <b id="tripWorked">—</b></div><div>Оплата: <b id="tripMoney">—</b></div></div>
+      <div class="row"><button id="tripSaveBtn" class="btn primary">Сохранить</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- Section Editor Modal -->
+<div id="sectionModal" class="modal" hidden>
+  <div class="modal-card animate-pop">
+    <div class="modal-head">
+      <div id="sectionModalTitle">Новый участок</div>
+      <div class="modal-actions">
+        <button id="sectionDeleteBtn" class="iconbtn danger">🗑</button>
+        <button id="sectionCloseBtn" class="iconbtn">✕</button>
+      </div>
+    </div>
+    <div class="modal-body form">
+      <div class="row"><label>Название участка</label><input id="secName" type="text" placeholder="Малошуйка — Обозерская"></div>
+      <div class="grid2">
+        <div class="row"><label>Станция отправления</label><input id="secFrom" type="text"></div>
+        <div class="row"><label>Станция прибытия</label><input id="secTo" type="text"></div>
+      </div>
+      <div class="grid3">
+        <div class="row"><label>Длина (км)</label><input id="secLen" type="number" inputmode="decimal" placeholder="167"></div>
+        <div class="row"><label>Норма веса</label><input id="secNormWeight" type="number" inputmode="decimal" placeholder="5200"></div>
+        <div class="row"><label>Норма длины</label><input id="secNormLen" type="number" inputmode="decimal" placeholder="59"></div>
+      </div>
+      <div class="row"><label>Станции на участке (через запятую)</label><textarea id="secStations" placeholder="Малошуйка, Обозерская, ..."></textarea></div>
+      <div class="row"><button id="sectionSaveBtn" class="btn primary">Сохранить</button></div>
+    </div>
+  </div>
+</div>
+
+<footer class="footer muted small">Данные сохраняются локально • Независимая альтернатива</footer>
+
+<script src="app.js"></script>
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js');});}</script>
 </body>
 </html>
