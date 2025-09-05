@@ -37,11 +37,11 @@
   <button class="navitem" data-view="db">База данных</button>
   <button class="navitem" data-view="refs">Справка</button>
   <button class="navitem" data-view="settings">Настройки</button>
-  <div class="drawer-foot muted small"><a href="#" id="waLink">Группа в WhatsApp</a> • Версия 2025.11</div>
+  <div class="drawer-foot muted small"><a href="#" id="waLink">Группа в WhatsApp</a> • Версия 2025.12</div>
 </nav>
 <div id="scrim" class="scrim" hidden></div>
 
-<main class="container">
+<main class="container"><div style="background:#1a212b;border:1px solid #273042;color:#fff;padding:10px 12px;border-radius:12px;margin:8px 0;">Запущена сборка <b>2025.12</b> (no-cache/no-modal). Если вы видите эту плашку — у вас точно новая версия.</div>
   <!-- DASHBOARD -->
   <section id="view-dashboard" class="view">
     <!-- Monthly widget (expanded) -->
@@ -185,71 +185,7 @@
   </section>
 </main>
 
-<!-- Trip Editor Modal -->
-<div id="tripModal" class="modal" hidden>
-  <div class="modal-card animate-pop">
-    <div class="modal-head">
-      <div id="tripModalTitle">Новая поездка</div>
-      <div class="modal-actions">
-        <button id="tripDeleteBtn" class="iconbtn danger">🗑</button>
-        <button id="tripCloseBtn" class="iconbtn">✕</button>
-      </div>
-    </div>
-    <div class="modal-body form">
-      <div class="grid2">
-        <div class="row"><label>Дата</label><input id="tripDate" type="date"></div>
-        <div class="row"><label>Маршрут (участок)</label><select id="tripSection"></select></div>
-      </div>
-      <div class="grid2">
-        <div class="row"><label>Станция отправления</label><input id="tripFrom" type="text"></div>
-        <div class="row"><label>Станция прибытия</label><input id="tripTo" type="text"></div>
-      </div>
-      <div class="grid3">
-        <div class="row"><label>Длина участка (км)</label><input id="tripLen" type="number" inputmode="decimal"></div>
-        <div class="row"><label>Тип поезда</label><select id="tripType"><option>Грузовой</option><option>Пассажирский</option><option>Маневровый</option></select></div>
-        <div class="row"><label>Режим</label><select id="tripMode"><option value="electro">Электро</option><option value="diesel">Дизель</option></select></div>
-      </div>
-      <div class="grid2">
-        <div class="row"><label>№ поезда</label><input id="tripNumber" type="text"></div>
-        <div class="row"><label>№ локомотива</label><input id="tripLoco" type="text"></div>
-      </div>
-      <div class="grid3">
-        <div class="row"><label>Вес поезда (т)</label><input id="tripWeight" type="number" inputmode="decimal"></div>
-        <div class="row"><label>Оси</label><input id="tripAxles" type="number" inputmode="numeric"></div>
-        <div class="row"><label>Усл. длина</label><input id="tripCondLen" type="number" inputmode="decimal"></div>
-      </div>
-
-      <div class="grid2">
-        <div class="row"><label>Явка</label><input id="tripStart" type="time"></div>
-        <div class="row"><label>Окончание</label><input id="tripEnd" type="time"></div>
-      </div>
-
-      <div class="row"><label class="checkbox"><input id="excludeStops" type="checkbox"> Исключать стоянки</label></div>
-
-      <div class="card subtle">
-        <div class="toolbar" style="margin:0 0 6px 0"><h3 style="margin:0;font-size:15px">Время стоянок</h3><button id="addStopBtn" class="btn">Добавить</button></div>
-        <div id="stopList" class="stack small"></div>
-        <div class="muted small">Итог по стоянкам: <b id="stopsTotal">0 мин</b></div>
-      </div>
-
-      <div class="grid2 mode-fields">
-        <div class="row mode-electro"><label>Электроэнергия (кВт·ч)</label><input id="tripEnergy" type="number" inputmode="decimal" value="0"></div>
-        <div class="row mode-diesel" hidden><label>Топливо (л)</label><input id="tripFuel" type="number" inputmode="decimal" value="0"></div>
-      </div>
-
-      <div class="card subtle">
-        <div class="section-title">Проверка норм участка</div>
-        <div id="normsBox" class="kv"></div>
-      </div>
-
-      <div class="row"><label>Заметки</label><textarea id="tripNotes"></textarea></div>
-      <div class="summary card"><div>Отработано: <b id="tripWorked">—</b></div><div>Оплата: <b id="tripMoney">—</b></div></div>
-      <div class="row"><button id="tripSaveBtn" class="btn primary">Сохранить</button></div>
-    </div>
-  </div>
-</div>
-
-<!-- Section Editor Modal -->
+<!-- Modals removed for v2025.12 -->
 <div id="sectionModal" class="modal" hidden>
   <div class="modal-card animate-pop">
     <div class="modal-head">
@@ -279,7 +215,7 @@
 <footer class="footer muted small">Данные сохраняются локально • Независимая альтернатива</footer>
 
 <script src="app.js"></script>
-<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js');});}</script>
+
 
 <div id="toast" class="toast" hidden>Сохранено</div>
 </body>
