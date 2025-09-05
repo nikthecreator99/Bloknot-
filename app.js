@@ -570,7 +570,8 @@ function init(){
   renderSections(); 
   renderDashboard(); 
   renderRefs();
-  // do not auto-open any modals
+  console.log('Init 2025.9 — no auto-open section modal');
 }
 init();
+
 
