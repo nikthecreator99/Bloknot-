@@ -319,9 +319,18 @@ document.addEventListener('keydown', (e)=>{
   if(!sectionModal.hidden && e.key === 'Escape'){ closeSectionModal(); }
 });
 
-el('addSectionBtn')?.addEventListener('click', ()=> { allowOpenSectionModal = true; openSectionModal(); allowOpenSectionModal = false; });
-function openSectionModal(sec=null){
-  if(!allowOpenSectionModal){ console.warn('Blocked auto-open of section modal'); return; }
+el('addSectionBtn')?.addEventListener('click', ()=> { window._userClick=true; openSectionModal(); window._userClick=false; });
+function openSectionModal(sec=null){ alert('Добавление/редактирование участка теперь выполняется на странице «Участки» без всплывающих окон.'); }
+  sectionModal.hidden=false;
+  el('sectionTitle').textContent = sec? 'Редактировать участок' : 'Добавить участок';
+  el('sectionName').value = sec? sec.name : '';
+  el('sectionStations').value = sec? sec.stations : '';
+  el('sectionLength').value = sec? sec.length : '';
+  el('sectionNormWeight').value = sec? sec.normWeight : '';
+  el('sectionNormLen').value = sec? sec.normLen : '';
+  editingSectionId = sec? sec.id : null;
+}
+
 
   editingSectionId = sec? sec.id : null;
   el('sectionModalTitle').textContent = editingSectionId? 'Редактирование участка' : 'Новый участок';
@@ -361,10 +370,105 @@ el('sectionDeleteBtn').addEventListener('click', ()=>{
   S('sections', S('sections',[]).filter(x=>x.id!==editingSectionId)); renderSections(); closeSectionModal();
 });
 
+
 function renderSections(){
   const wrap = el('sectionList'); wrap.innerHTML='';
-  const sections = S('sections',[]);*/
-  if(!sections.length){ wrap.innerHTML='<div class="muted small">Нет участков.</div>'; return; }
+  const sections = S('sections',[]);
+
+  // Inline form state
+  const isOpen = !!(S('sectionsInlineFormOpen')||false);
+  const editId = S('sectionsEditId', null);
+
+  // Build inline form card
+  const formCard = document.createElement('div'); formCard.className='card form';
+  let editing = sections.find(x=> x.id===editId) || null;
+  formCard.innerHTML = `
+    <div class="title" style="margin-bottom:6px">${editing? 'Редактирование участка' : 'Новый участок'}</div>
+    <div class="grid2">
+      <div class="row"><label>Название участка</label><input id="if_name" type="text" placeholder="Малошуйка — Обозерская" value="${editing?.name||''}"></div>
+      <div class="row"><label>Длина (км)</label><input id="if_len" type="number" inputmode="decimal" value="${editing?.len||''}"></div>
+    </div>
+    <div class="grid2">
+      <div class="row"><label>Станция отправления</label><input id="if_from" type="text" value="${editing?.from||''}"></div>
+      <div class="row"><label>Станция прибытия</label><input id="if_to" type="text" value="${editing?.to||''}"></div>
+    </div>
+    <div class="grid3">
+      <div class="row"><label>Норма веса</label><input id="if_normWeight" type="number" inputmode="decimal" value="${editing?.normWeight||''}"></div>
+      <div class="row"><label>Норма длины</label><input id="if_normLen" type="number" inputmode="decimal" value="${editing?.normLen||''}"></div>
+      <div class="row"><label>Станции (через запятую)</label><input id="if_stations" type="text" value="${(editing?.stations||[]).join(', ')}"></div>
+    </div>
+    <div class="row">
+      <button id="if_save" class="btn primary">${editing? 'Сохранить' : 'Добавить'}</button>
+      ${editing? '<button id="if_cancel" class="btn ghost">Отмена</button><button id="if_delete" class="btn danger">Удалить</button>' : '<button id="if_cancel" class="btn ghost">Отмена</button>'}
+    </div>
+  `;
+
+  // Toggle visibility per isOpen
+  if(isOpen){ wrap.appendChild(formCard); }
+
+  // List of sections
+  if(!sections.length){
+    const empty = document.createElement('div'); empty.className='muted small';
+    empty.textContent = isOpen ? 'Заполните форму и нажмите «Добавить»' : 'Нет участков. Нажмите «Новый участок» наверху.';
+    wrap.appendChild(empty);
+  }else{
+    sections.forEach(s=>{
+      const d=document.createElement('div'); d.className='card';
+      d.innerHTML = `<div class="list-row"><div class="title">${s.name}</div></div>
+        <div class="kv">
+          <div>Отправление</div><div><b>${s.from||'—'}</b></div>
+          <div>Прибытие</div><div><b>${s.to||'—'}</b></div>
+          <div>Длина</div><div><b>${s.len||0} км</b></div>
+          <div>Норма веса</div><div><b>${s.normWeight||0}</b></div>
+          <div>Норма длины</div><div><b>${s.normLen||0}</b></div>
+          <div>Станции</div><div><b>${(s.stations||[]).join(' · ')||'—'}</b></div>
+        </div>
+        <div style="margin-top:8px"><button class="btn" data-edit="${s.id}">Редактировать</button></div>`;
+      wrap.appendChild(d);
+    });
+  }
+
+  // Bind actions if form is visible
+  if(isOpen){
+    el('if_save').addEventListener('click', ()=>{
+      const s = {
+        id: editing? editing.id : Date.now(),
+        name: el('if_name').value.trim() || `${el('if_from').value.trim()} — ${el('if_to').value.trim()}`,
+        from: el('if_from').value.trim(),
+        to: el('if_to').value.trim(),
+        len: Number(el('if_len').value)||0,
+        normWeight: Number(el('if_normWeight').value)||0,
+        normLen: Number(el('if_normLen').value)||0,
+        stations: (el('if_stations').value||'').split(',').map(x=>x.trim()).filter(Boolean)
+      };
+      const arr = S('sections',[]);
+      const idx = arr.findIndex(x=> x.id===s.id);
+      if(idx>=0) arr[idx]=s; else arr.push(s);
+      S('sections', arr);
+      S('sectionsInlineFormOpen', false);
+      S('sectionsEditId', null);
+      toast(editing? 'Участок сохранён' : 'Участок добавлен');
+      renderSections();
+    });
+    el('if_cancel').addEventListener('click', ()=>{
+      S('sectionsInlineFormOpen', false); S('sectionsEditId', null); renderSections();
+    });
+    if(editing){
+      el('if_delete').addEventListener('click', ()=>{
+        if(!confirm('Удалить участок?')) return;
+        S('sections', S('sections',[]).filter(x=> x.id!==editing.id));
+        S('sectionsInlineFormOpen', false); S('sectionsEditId', null);
+        toast('Участок удалён'); renderSections();
+      });
+    }
+  }
+
+  // Bind edit buttons
+  wrap.querySelectorAll('button[data-edit]').forEach(b=>b.addEventListener('click', ()=>{
+    const id=Number(b.getAttribute('data-edit'));
+    S('sectionsEditId', id); S('sectionsInlineFormOpen', true); renderSections();
+  }));
+}
   sections.forEach(s=>{
     const d=document.createElement('div'); d.className='card';
     d.innerHTML = `<div class="list-row"><div class="title">${s.name}</div></div>
@@ -380,7 +484,7 @@ function renderSections(){
     wrap.appendChild(d);
   });
   wrap.querySelectorAll('button[data-edit]').forEach(b=>b.addEventListener('click', ()=>{ allowOpenSectionModal = true;
-    const id=Number(b.getAttribute('data-edit')); openSectionModal(S('sections',[]).find(x=>x.id===id)); allowOpenSectionModal = false;
+    const id=Number(b.getAttribute('data-edit')); window._userClick=true; openSectionModal(S('sections',[]).find(x=>x.id===id)); window._userClick=false;
   }));
 }
 
@@ -569,15 +673,15 @@ function renderDashboard(){
 function init(){
   document.getElementById('themeSelect').value = S('theme','dark'); 
   applyTheme(S('theme','dark'));
-  // Force-hide any modal remnants
   document.querySelectorAll('.modal').forEach(m=>{ m.hidden = true; });
-  renderTariffs(); 
-  renderSections(); 
-  renderDashboard(); 
+  renderTariffs();
+  renderSections();
+  renderDashboard();
   renderRefs();
-  console.log('Init 2025.10 — modals force-hidden, section modal guarded');
+  console.log('Init 2025.11 — section modal auto-open disabled');
 }
 init();
+
 
 
 
